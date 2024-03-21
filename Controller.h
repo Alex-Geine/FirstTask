@@ -43,7 +43,11 @@ private:
 
 	//Some Flags
 	bool TriangulationReady = false;
-	
+
+	//Model data
+	Ellipce* el = nullptr;
+	vector<tPoint> points;
+	vector<Triangle> tr;	
 public:	
 	//apdate model
 	void UpdateModel(double R, double disp, double x0, double y0, double height, double width, double N,
@@ -59,7 +63,7 @@ public:
 	void StartSolve();
 
 	//запускает триангул€цию
-	void StartTriangulation();
+	void StartTriangulation(); 
 
 	Controller() {
 		GdiplusStartupInput si;

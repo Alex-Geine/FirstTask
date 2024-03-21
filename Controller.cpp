@@ -11,14 +11,22 @@ DWORD WINAPI Controller::TriangleFunk() {
 	return 0;
 };
 
-//apdate model
+//update model
 void Controller::UpdateModel(double R, double disp, double x0, double y0, double height, double width, double N,
 	pair<double, double> c1, pair<double, double> c2, double A1, double A2, double B1, double B2) {
 	this->R = R;
 	Ellipce* el = new Ellipce[2];
 	el[0] = Ellipce(c1, A1, B1);
 	el[1] = Ellipce(c2, A2, B2);
+	this->el = el;
 	tc = new TriangulationClass(N, x0, y0, height, width, disp, el);
+	GetData();
+};
+
+//забирает данные из модели
+void Controller::GetData() {
+	points = *tc->GetPoins();
+	tr = *tc->GetTriangles();
 };
 
 //очищает данные
@@ -124,23 +132,23 @@ void Controller::DrawMainGr(LPDRAWITEMSTRUCT Item1) {
 
 	gr.SetTransform(&matr);
 
+	
 	//отрисовка области
 	gr.DrawRectangle(&pen2, RectF(PointF(tc->GetX0(), tc->GetY0()), SizeF(tc->GetWidth(), tc->GetHeight())));
 
-	//отрисовка эллипсов
-	Ellipce* el = tc->GetEllipces();
-	for (int i = 0; i < tc->GetElCount(); i++)
+	//отрисовка эллипсов	
+	for (int i = 0; i < 2; i++)
 		gr.DrawEllipse(&pen2, RectF(PointF(el[i].GetX0(), el[i].GetY0()), SizeF(el[i].GetWidth(), el[i].GetHeight())));
-
+	
 	//отрисовка точек для триангуляции
-	int n = tc->GetN();
-	vector<tPoint> points = *tc->GetPoins();
 	double radius = R / 100;
-	for (int i = 0; i < n; i++) {
+	for (int i = 0; i < points.size(); i++) {
 		gr.DrawEllipse(&pen5, RectF(PointF(points[i].X() - radius / 2, points[i].Y() - radius / 2), SizeF(radius, radius)));
 	}
+	
 	//отрисовка треугольников
-	vector<Triangle> tr = *tc->GetTriangles();
+	
+	
 	if (!tr.empty()) {
 		for (int i = 0; i < tr.size(); i++) {
 			gr.DrawLine(&pen3, PointF(tr[i].GetP1().X(), tr[i].GetP1().Y()), PointF(tr[i].GetP2().X(), tr[i].GetP2().Y()));
@@ -148,8 +156,6 @@ void Controller::DrawMainGr(LPDRAWITEMSTRUCT Item1) {
 			gr.DrawLine(&pen3, PointF(tr[i].GetP2().X(), tr[i].GetP2().Y()), PointF(tr[i].GetP3().X(), tr[i].GetP3().Y()));
 		}
 	}
-
-	
 	
 	Graphics grnew(Item1->hDC);
 	grnew.DrawImage(&Image, 0, 0);
