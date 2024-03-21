@@ -157,24 +157,24 @@ void TriangulationClass::Triangulation() {
 	//simple triang with extra points
 	SimpleTriangulation(points);
 
-	////this cicle adds new points and do new triangulation
-	//double dx = width / (N - 1);
-	//double dy = height / (N - 1);
+	//this cicle adds new points and do new triangulation
+	double dx = width / (N - 1);
+	double dy = height / (N - 1);
 
-	//for (int i = 0; i < N; i++) {
-	//	for (int j = 0; j < N; j++) {
-	//		//add new point
-	//		tPoint newP = tPoint(x0 + dx * i + disp * (1 - 2 * (double)rand() / RAND_MAX),
-	//			y0 + dy * j + disp * (1 - 2 * (double)rand() / RAND_MAX), 0);
-	//		
-	//		points.push_back(newP);
-	//		tempPoints.push_back(newP);
+	for (int i = 0; i < N; i++) {
+		for (int j = 0; j < N; j++) {
+			//add new point
+			tPoint newP = tPoint(x0 + dx * i + disp * (1 - 2 * (double)rand() / RAND_MAX),
+				y0 + dy * j + disp * (1 - 2 * (double)rand() / RAND_MAX), 0);
+			
+			points.push_back(newP);
+			tempPoints.push_back(newP);
 
-	//		//check triangles
+			//check triangles
 
 
-	//	}
-	//}	 
+		}
+	}	 
 };
 
 //common function
