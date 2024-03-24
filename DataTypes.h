@@ -16,6 +16,7 @@ private:
 	//coords
 	double x = 0;
 	double y = 0;
+	double z = 0;
 
 	//flags
 	bool isExtra = false;
@@ -45,6 +46,9 @@ public:
 	//get p
 	double P() { return p; };
 
+	//get z
+	double Z() { return z; };
+
 	//set X
 	void SetX(double x) { this->x = x; };
 
@@ -53,6 +57,9 @@ public:
 
 	//set p
 	void SetP(double p) { this->p = p; };
+
+	//set z
+	void SetZ(double z) { this->z = z; };
 
 	//isExtra
 	bool isExtraP() { return isExtra; };
@@ -80,11 +87,17 @@ public:
 	//find Cpoyes neigh
 	bool FindCopyNeigh(tPoint p);
 
+	//check if tPoint is neight
+	bool IsNeigh(tPoint);
+
 	//getTriagnles family
 	vector<Triangle*> GetFamilyTriangles() { return familyTriangles; };
 
 	//get Neigh
 	vector<tPoint*> GetNeightbours() { return neighbour; };
+
+	//get Two triangles
+	vector<Triangle*> GetTwoTriangles(tPoint);
 };
 
 //структура эллипса
@@ -131,10 +144,12 @@ private:
 	double Ro = 0;						//circumscribed circle radius
 	double Rv = 0;						//inscribed circle radius
 	double triangleParametr = 0;		//parametr for rating triangles
+	double area;						// area of triangle
 	tPoint center;		//circumcenter
 
 	//Find parametrs
 	void FindParametrs();
+	
 public:
 	//constructor
 	Triangle(tPoint p1, tPoint p2, tPoint p3);
@@ -152,6 +167,7 @@ public:
 	tPoint* GetpP3() { return &p3; };
 
 	double GetParametr() { return triangleParametr; };
+	double GetS() { return area; };
 
 	//operator ==
 	bool operator==(Triangle& t) {
@@ -163,4 +179,7 @@ public:
 		else
 			return false;
 	};
+
+	//Функция, возвращающая дифференциал
+	void GetDiff(tPoint p, double& A, double & B);
 };

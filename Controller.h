@@ -11,6 +11,67 @@ using namespace Gdiplus;
 #include "triangulationClass.h"
 #include "Model.h"
 
+struct ColorTable {
+public:
+	//массив кисточек
+	SolidBrush** brashes;
+
+	//массив кисточек для треугольников
+	SolidBrush** triangleBrashes;
+
+	//размер сетки цветов
+	int Size = 20;
+
+	//массив с пороговыми значениями
+	double* mas;
+
+	ColorTable(double max, double min) {
+		double step = abs(max - min) / (Size - 1);
+
+		mas = new double[Size];
+		brashes = new SolidBrush * [Size - 1];
+		triangleBrashes = new SolidBrush * [Size - 1];
+
+		for (int i = 0; i < Size; i++)
+			mas[i] = min + i * step;
+
+		for (int i = 0; i < Size - 1; i++) {
+			Color col(255 * i / (Size - 1), 0, 255 - 255 * i / (Size - 1));
+			brashes[i] = new SolidBrush(col);
+
+			Color col1(50, 255 * i / (Size - 1), 0, 255 - 255 * i / (Size - 1));
+			triangleBrashes[i] = new SolidBrush(col1);
+		}
+	}
+
+	//возвращает указатель на кисть из нужного диапазона
+	SolidBrush* GetBrush(double val) {
+		for (int i = 0; i < Size - 1; i++) {
+			if ((val >= mas[i]) && (val <= mas[i + 1]))
+				return brashes[i];
+		}
+		return new SolidBrush(Color::Black);
+	}
+
+	//возвращает указатель на кисть для треугольника
+	SolidBrush* GetBrushForTriangle(double val) {
+		for (int i = 0; i < Size - 1; i++) {
+			if ((val >= mas[i]) && (val <= mas[i + 1]))
+				return triangleBrashes[i];
+		}
+		return new SolidBrush(Color::Black);
+	}
+
+	~ColorTable() {
+		if (mas)
+			delete[] mas;
+		if (brashes)
+			delete[] brashes;
+		if (triangleBrashes)
+			delete[] triangleBrashes;
+	}
+};
+
 class Controller {	
 private:	
 	ULONG_PTR token;
@@ -59,13 +120,18 @@ private:
 	//Some Flags
 	bool TriangulationReady = false;
 
+	bool SolvingReady = false;
+
 	//Model data
 	
-	double Potencial = 10;		//value of potincial on ellipces
+	double Potencial = 20;		//value of potincial on ellipces
 
 	Ellipce* el = nullptr;
 	vector<tPoint> points;
-	vector<Triangle> tr;	
+	vector<Triangle> tr;
+
+	//functions
+	void GetMinMax(double& min, double& max);
 
 public:	
 	//apdate model
@@ -111,4 +177,6 @@ public:
 
 	//getters
 	bool IsTriangReady() { return TriangulationReady; };
+
+	bool IsSolvingReady() { return SolvingReady; };
 };

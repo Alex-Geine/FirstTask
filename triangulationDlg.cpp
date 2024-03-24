@@ -90,6 +90,7 @@ BEGIN_MESSAGE_MAP(CtriangulationDlg, CDialogEx)
 	ON_BN_CLICKED(IDOK, &CtriangulationDlg::OnBnClickedOk)
 	ON_WM_MOUSEWHEEL()
 	ON_BN_CLICKED(IDOK2, &CtriangulationDlg::OnBnClickedOk2)
+	ON_BN_CLICKED(IDOK3, &CtriangulationDlg::OnBnClickedOk3)
 END_MESSAGE_MAP()
 
 
@@ -193,7 +194,7 @@ void CtriangulationDlg::OnTimer(UINT_PTR nIDEvent)
 		DispatchMessage(&msg);
 	}
 
-	if (con.IsTriangReady())
+	if (con.IsTriangReady() || con.IsSolvingReady())
 		KillTimer(timer);
 
 	drawer.draw = 1;
@@ -257,3 +258,17 @@ void CtriangulationDlg::OnBnClickedOk2()
 		DispatchMessage(&msg);
 	}
 }
+
+//Посчитать
+void CtriangulationDlg::OnBnClickedOk3()
+{
+	con.StartSolve();
+
+	timer = SetTimer(1, 10, 0);
+}
+
+//Timer 2
+void OnTimer2(UINT_PTR nIDEvent) {
+	
+};
+

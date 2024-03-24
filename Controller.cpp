@@ -7,14 +7,34 @@ DWORD WINAPI Controller::TriangleFunk() {
 	tc->Triangulation();
 
 	TriangulationReady = true;
+	return 0;
+};
+ 
+//функция, которая работает в потоке с моделью
+DWORD WINAPI Controller::ModelFunk() {
+	mod->StartSolving();
+	mod->GetData(points, tr);
+	SolvingReady = true;
+	
+	delete mod;
+	mod = NULL;
+
+	MessageBox(NULL, L"Solving is complete!", L"Success!", NULL);
 
 	return 0;
 };
 
-//функция, которая работает в потоке с моделью
-DWORD WINAPI ModelFunk() {
-
-	return 0;
+//запусткает вычисления
+void Controller::StartSolve() {
+	if (!points.empty() && !tr.empty()) {
+		SolvingReady = false;
+		mod = new Model();
+		mod->SetData(points, tr);
+		ModelHandle = CreateThread(NULL, NULL, StaticModelFunk, (void*)this, 0, NULL);
+	}
+	else {
+		MessageBox(NULL, L"triangulation data is empty!", L"Error", NULL);
+	}
 };
 
 //update model
@@ -46,6 +66,21 @@ void Controller::Clear() {
 void Controller::StartTriangulation() {
 	TriangulationReady = false;
 	TriangleHandle = CreateThread(NULL, NULL, StaticTriangleFunk, (void*)this, 0, NULL);	
+};
+
+//functions
+void Controller::GetMinMax(double& min, double& max) {
+	if (!points.empty()) {
+		min = points[0].P();
+		max = points[0].P();
+
+		for (int i = 0; i < points.size(); i++) {
+			if (min > points[i].P())
+				min = points[i].P();
+			if (max < points[i].P())
+				max = points[i].P();
+		}
+	}
 };
 
 //запускает отрисовку 2d графика
@@ -138,7 +173,11 @@ void Controller::DrawMainGr(LPDRAWITEMSTRUCT Item1) {
 
 	gr.SetTransform(&matr);
 
-	
+	//prepare color Table
+	double min = 0, max = 0;
+	GetMinMax(min, max);
+	ColorTable ct(max, min);
+
 	//отрисовка области
 	gr.DrawRectangle(&pen2, RectF(PointF(tc->GetX0(), tc->GetY0()), SizeF(tc->GetWidth(), tc->GetHeight())));
 
@@ -147,23 +186,25 @@ void Controller::DrawMainGr(LPDRAWITEMSTRUCT Item1) {
 		gr.DrawEllipse(&pen2, RectF(PointF(el[i].GetX0(), el[i].GetY0()), SizeF(el[i].GetWidth(), el[i].GetHeight())));
 	
 	//временные кистя для отрисовки ГУ
-	SolidBrush brushZero(Color::Blue);
-	SolidBrush brushPlus(Color::Red);
-	SolidBrush brushMin(Color::DarkBlue);
+	//SolidBrush brushZero(Color::Blue);
+	//SolidBrush brushPlus(Color::Red);
+	//SolidBrush brushMin(Color::DarkBlue);
 
 	//отрисовка точек для триангуляции
 	double radius = R / 100;
 	for (int i = 0; i < points.size(); i++) {
 		//отрисовываем цвет точки для граничных условий (Временное решение)
-		if (points[i].isBorderP()) {
+		/*if (points[i].isBorderP()) {
 			if (points[i].P() == 0)
 				gr.FillEllipse(&brushZero, RectF(PointF(points[i].X() - radius / 2, points[i].Y() - radius / 2), SizeF(radius, radius)));
 			else if (points[i].P() > 0)
 				gr.FillEllipse(&brushMin, RectF(PointF(points[i].X() - radius / 2, points[i].Y() - radius / 2), SizeF(radius, radius)));
 			if (points[i].P() < 0)
 				gr.FillEllipse(&brushPlus, RectF(PointF(points[i].X() - radius / 2, points[i].Y() - radius / 2), SizeF(radius, radius)));
-		}
-			
+		}*/
+		
+		//coloring points
+		gr.FillEllipse(ct.GetBrush(points[i].P()), RectF(PointF(points[i].X() - radius / 2, points[i].Y() - radius / 2), SizeF(radius, radius)));
 
 		gr.DrawEllipse(&pen5, RectF(PointF(points[i].X() - radius / 2, points[i].Y() - radius / 2), SizeF(radius, radius)));				
 	}
@@ -173,6 +214,16 @@ void Controller::DrawMainGr(LPDRAWITEMSTRUCT Item1) {
 	
 	if (!tr.empty()) {
 		for (int i = 0; i < tr.size(); i++) {
+			//fill triangle
+			PointF* pt = new PointF[3];
+			pt[0] = PointF(tr[i].GetP1().X(),tr[i].GetP1().Y());
+			pt[1] = PointF( tr[i].GetP2().X(),tr[i].GetP2().Y());
+			pt[2] = PointF( tr[i].GetP3().X(),tr[i].GetP3().Y() );
+
+			double val = (tr[i].GetP1().P() + tr[i].GetP2().P() + tr[i].GetP3().P()) / 3;
+
+			gr.FillPolygon(ct.GetBrushForTriangle(val), pt, 3);
+
 			gr.DrawLine(&pen3, PointF(tr[i].GetP1().X(), tr[i].GetP1().Y()), PointF(tr[i].GetP2().X(), tr[i].GetP2().Y()));
 			gr.DrawLine(&pen3, PointF(tr[i].GetP3().X(), tr[i].GetP3().Y()), PointF(tr[i].GetP1().X(), tr[i].GetP1().Y()));
 			gr.DrawLine(&pen3, PointF(tr[i].GetP2().X(), tr[i].GetP2().Y()), PointF(tr[i].GetP3().X(), tr[i].GetP3().Y()));
@@ -180,30 +231,30 @@ void Controller::DrawMainGr(LPDRAWITEMSTRUCT Item1) {
 	}
 
 	//отрисовка треугольиков, которые есть в точке
-	Pen pen50(Color::Green, 0.006);
-	
-	vector<Triangle*> famTr = points[20].GetFamilyTriangles();
-	if (!famTr.empty()) {
-		for (int i = 0; i < famTr.size(); i++) {
-			gr.DrawLine(&pen50, PointF(famTr[i]->GetP1().X(), famTr[i]->GetP1().Y()), PointF(famTr[i]->GetP2().X(), famTr[i]->GetP2().Y()));
-			gr.DrawLine(&pen50, PointF(famTr[i]->GetP3().X(), famTr[i]->GetP3().Y()), PointF(famTr[i]->GetP1().X(), famTr[i]->GetP1().Y()));
-			gr.DrawLine(&pen50, PointF(famTr[i]->GetP2().X(), famTr[i]->GetP2().Y()), PointF(famTr[i]->GetP3().X(), famTr[i]->GetP3().Y()));
-		}
-	}
+	//Pen pen50(Color::Green, 0.006);
+	//
+	//vector<Triangle*> famTr = points[20].GetFamilyTriangles();
+	//if (!famTr.empty()) {
+	//	for (int i = 0; i < famTr.size(); i++) {
+	//		gr.DrawLine(&pen50, PointF(famTr[i]->GetP1().X(), famTr[i]->GetP1().Y()), PointF(famTr[i]->GetP2().X(), famTr[i]->GetP2().Y()));
+	//		gr.DrawLine(&pen50, PointF(famTr[i]->GetP3().X(), famTr[i]->GetP3().Y()), PointF(famTr[i]->GetP1().X(), famTr[i]->GetP1().Y()));
+	//		gr.DrawLine(&pen50, PointF(famTr[i]->GetP2().X(), famTr[i]->GetP2().Y()), PointF(famTr[i]->GetP3().X(), famTr[i]->GetP3().Y()));
+	//	}
+	//}
 
-	//отрисовка соседей
-	SolidBrush brushNeigh(Color::White);
-	SolidBrush brushN(Color::Black);
-	vector<tPoint*> neigh = points[20].GetNeightbours();
-	gr.FillEllipse(&brushN, RectF(PointF(points[0].X() - radius / 2, points[0].Y() - radius / 2), SizeF(radius, radius)));
-	
-	if (!neigh.empty()) {
+	////отрисовка соседей
+	//SolidBrush brushNeigh(Color::White);
+	//SolidBrush brushN(Color::Black);
+	//vector<tPoint*> neigh = points[20].GetNeightbours();
+	//gr.FillEllipse(&brushN, RectF(PointF(points[0].X() - radius / 2, points[0].Y() - radius / 2), SizeF(radius, radius)));
+	//
+	//if (!neigh.empty()) {
 
-		for (int i = 0; i < neigh.size(); i++) {
-			gr.FillEllipse(&brushNeigh, RectF(PointF(neigh[i]->X() - radius / 2, neigh[i]->Y() - radius / 2), SizeF(radius, radius)));
-		}
-		
-	}
+	//	for (int i = 0; i < neigh.size(); i++) {
+	//		gr.FillEllipse(&brushNeigh, RectF(PointF(neigh[i]->X() - radius / 2, neigh[i]->Y() - radius / 2), SizeF(radius, radius)));
+	//	}
+	//	
+	//}
 
 	Graphics grnew(Item1->hDC);
 	grnew.DrawImage(&Image, 0, 0);

@@ -3,6 +3,15 @@
 
 //TPOINT STRUCT
 
+//check if tPoint is neight
+bool tPoint::IsNeigh(tPoint p) {
+	for (int i = 0; i < neighbour.size(); i++)
+		if (p == *neighbour[i])
+			return true;
+
+	return false;
+};
+
 //add triangle in family
 void tPoint::AddTriangle(Triangle* tr) {
 	if(tr)
@@ -37,12 +46,53 @@ void tPoint::FindNeigh() {
 	}
 };
 
+//get Two triangles
+vector<Triangle*> tPoint::GetTwoTriangles(tPoint p) {
+	vector<Triangle*> res;
+	for (int i = 0; i < this->familyTriangles.size(); i++)
+		for (int j = 0; j < p.familyTriangles.size(); j++)
+			if (this->familyTriangles[i] == p.familyTriangles[j])
+				res.push_back(this->familyTriangles[i]);		
+	return res;
+};
+
 
 //TRIANGLE STRUCT
 
 //constructor
 Triangle::Triangle(tPoint p1, tPoint p2, tPoint p3) : p1(p1), p2(p2), p3(p3) {
 	FindParametrs();
+};
+
+//‘ункци€, возвращающа€ дифференциал
+void Triangle::GetDiff(tPoint p, double& A, double& B) {
+	//edit value of point p
+	if (p == p1)
+		p1.SetZ(1);
+	else if (p == p2)
+		p2.SetZ(1);
+	else
+		p3.SetZ(1);
+
+	//temp vectors
+	double
+		a1 = p1.X() - p3.X(),
+		a2 = p1.Y() - p3.Y(),
+		a3 = p1.Z() - p3.Z(),
+		b1 = p2.X() - p3.X(),
+		b2 = p2.X() - p3.X(),
+		b3 = p2.X() - p3.X();
+
+	A = a2 * b3 - a3 * b2;
+	B = -1. * (a1 * b3 - a3 * b2);
+
+	//edit value of point p
+	if (p == p1)
+		p1.SetZ(0);
+	else if (p == p2)
+		p2.SetZ(0);
+	else
+		p3.SetZ(0);
 };
 
 //check point
@@ -87,6 +137,10 @@ void Triangle::FindParametrs() {
 
 	//rating triangle
 	triangleParametr = 2 * Rv / Ro;
+
+	//area of triangle
+	//formula gerona: S = sqrt(p * (p Ч AB) * (p Ч AC) * (p Ч BC))
+	area = sqrt(p * (p - a) * (p - b) * (p - c));
 };
 
 //ELLIPCE STRUCT
