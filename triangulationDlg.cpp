@@ -53,7 +53,7 @@ END_MESSAGE_MAP()
 CtriangulationDlg::CtriangulationDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_TRIANGULATION_DIALOG, pParent)
 	, N(20)
-	, disp(0.01)
+	, disp(0.001)
 	, el1X(-0.5)
 	, el1y(-0.5)
 	, el1A(0.1)
@@ -184,8 +184,9 @@ HCURSOR CtriangulationDlg::OnQueryDragIcon()
 void CtriangulationDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	drawer.draw = 1;
+	con.GetData();
 	drawer.Invalidate(false);
-
+	
 	while (PeekMessage(&msg, 0, WM_PAINT, WM_PAINT, PM_REMOVE))
 	{
 		TranslateMessage(&msg);
@@ -195,6 +196,16 @@ void CtriangulationDlg::OnTimer(UINT_PTR nIDEvent)
 	if (con.IsTriangReady())
 		KillTimer(timer);
 
+	drawer.draw = 1;
+	con.GetData();
+	drawer.Invalidate(false);
+
+	while (PeekMessage(&msg, 0, WM_PAINT, WM_PAINT, PM_REMOVE))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
 	CDialogEx::OnTimer(nIDEvent);
 }
 
@@ -203,9 +214,10 @@ void CtriangulationDlg::OnBnClickedOk()
 {
 	UpdateData();
 	con.UpdateModel(2, disp, -1, -1, 2, 2, N, { el1X, el1y }, {el2x, el2y}, el1A, el2A, el1B, el2B);
-
+	con.GetData();
 	drawer.draw = 1;
 	drawer.Invalidate(false);
+	
 
 	while (PeekMessage(&msg, 0, WM_PAINT, WM_PAINT, PM_REMOVE))
 	{
@@ -232,7 +244,16 @@ BOOL CtriangulationDlg::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 
 //Триангулировать
 void CtriangulationDlg::OnBnClickedOk2()
-{
+{	
 	con.StartTriangulation();
 	timer = SetTimer(1, 10, 0);	
+	drawer.draw = 1;
+	con.GetData();
+	drawer.Invalidate(false);
+
+	while (PeekMessage(&msg, 0, WM_PAINT, WM_PAINT, PM_REMOVE))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
 }

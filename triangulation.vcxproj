@@ -185,6 +185,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Controller.h" />
+    <ClInclude Include="DataTypes.h" />
     <ClInclude Include="Drawer.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Model.h" />
@@ -197,6 +198,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Controller.cpp" />
+    <ClCompile Include="DataTypes.cpp" />
     <ClCompile Include="Drawer.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="pch.cpp">

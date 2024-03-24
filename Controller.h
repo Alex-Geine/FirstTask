@@ -9,13 +9,17 @@
 using namespace Gdiplus;
 
 #include "triangulationClass.h"
+#include "Model.h"
 
 class Controller {	
 private:	
 	ULONG_PTR token;
 	TriangulationClass* tc = nullptr;
+	Model* mod = nullptr;
+
 	HANDLE TriangleHandle = NULL;
-		
+	HANDLE ModelHandle = NULL;
+
 	//функци€, котора€ работает в потоке с триангул€цией
 	DWORD WINAPI TriangleFunk();
 
@@ -23,6 +27,17 @@ private:
 		Controller* This = (Controller*)param;
 		return This->TriangleFunk();
 	};
+
+
+	//функци€, котора€ работает в потоке с моделью
+	DWORD WINAPI ModelFunk();
+
+	static DWORD WINAPI StaticModelFunk(PVOID param) {
+		Controller* This = (Controller*)param;
+		return This->ModelFunk();
+	};
+
+
 	
 	//For Scaling
 
@@ -43,7 +58,15 @@ private:
 
 	//Some Flags
 	bool TriangulationReady = false;
+
+	//Model data
 	
+	double Potencial = 10;		//value of potincial on ellipces
+
+	Ellipce* el = nullptr;
+	vector<tPoint> points;
+	vector<Triangle> tr;	
+
 public:	
 	//apdate model
 	void UpdateModel(double R, double disp, double x0, double y0, double height, double width, double N,
@@ -59,7 +82,7 @@ public:
 	void StartSolve();
 
 	//запускает триангул€цию
-	void StartTriangulation();
+	void StartTriangulation(); 
 
 	Controller() {
 		GdiplusStartupInput si;

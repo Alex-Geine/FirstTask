@@ -11,14 +11,28 @@ DWORD WINAPI Controller::TriangleFunk() {
 	return 0;
 };
 
-//apdate model
+//функция, которая работает в потоке с моделью
+DWORD WINAPI ModelFunk() {
+
+	return 0;
+};
+
+//update model
 void Controller::UpdateModel(double R, double disp, double x0, double y0, double height, double width, double N,
 	pair<double, double> c1, pair<double, double> c2, double A1, double A2, double B1, double B2) {
 	this->R = R;
 	Ellipce* el = new Ellipce[2];
-	el[0] = Ellipce(c1, A1, B1);
-	el[1] = Ellipce(c2, A2, B2);
+	el[0] = Ellipce(c1, A1, B1, Potencial);			//этот будет с положительным потенциалом
+	el[1] = Ellipce(c2, A2, B2, -Potencial);		//этот будет с отрицательным потенциалом
+	this->el = el;
 	tc = new TriangulationClass(N, x0, y0, height, width, disp, el);
+	GetData();
+};
+
+//забирает данные из модели
+void Controller::GetData() {
+	points = *tc->GetPoins();
+	tr = *tc->GetTriangles();
 };
 
 //очищает данные
@@ -124,23 +138,39 @@ void Controller::DrawMainGr(LPDRAWITEMSTRUCT Item1) {
 
 	gr.SetTransform(&matr);
 
+	
 	//отрисовка области
 	gr.DrawRectangle(&pen2, RectF(PointF(tc->GetX0(), tc->GetY0()), SizeF(tc->GetWidth(), tc->GetHeight())));
 
-	//отрисовка эллипсов
-	Ellipce* el = tc->GetEllipces();
-	for (int i = 0; i < tc->GetElCount(); i++)
+	//отрисовка эллипсов	
+	for (int i = 0; i < 2; i++)
 		gr.DrawEllipse(&pen2, RectF(PointF(el[i].GetX0(), el[i].GetY0()), SizeF(el[i].GetWidth(), el[i].GetHeight())));
+	
+	//временные кистя для отрисовки ГУ
+	SolidBrush brushZero(Color::Blue);
+	SolidBrush brushPlus(Color::Red);
+	SolidBrush brushMin(Color::DarkBlue);
 
 	//отрисовка точек для триангуляции
-	int n = tc->GetN();
-	vector<tPoint> points = *tc->GetPoins();
 	double radius = R / 100;
-	for (int i = 0; i < n; i++) {
-		gr.DrawEllipse(&pen5, RectF(PointF(points[i].X() - radius / 2, points[i].Y() - radius / 2), SizeF(radius, radius)));
+	for (int i = 0; i < points.size(); i++) {
+		//отрисовываем цвет точки для граничных условий (Временное решение)
+		if (points[i].isBorderP()) {
+			if (points[i].P() == 0)
+				gr.FillEllipse(&brushZero, RectF(PointF(points[i].X() - radius / 2, points[i].Y() - radius / 2), SizeF(radius, radius)));
+			else if (points[i].P() > 0)
+				gr.FillEllipse(&brushMin, RectF(PointF(points[i].X() - radius / 2, points[i].Y() - radius / 2), SizeF(radius, radius)));
+			if (points[i].P() < 0)
+				gr.FillEllipse(&brushPlus, RectF(PointF(points[i].X() - radius / 2, points[i].Y() - radius / 2), SizeF(radius, radius)));
+		}
+			
+
+		gr.DrawEllipse(&pen5, RectF(PointF(points[i].X() - radius / 2, points[i].Y() - radius / 2), SizeF(radius, radius)));				
 	}
+	
 	//отрисовка треугольников
-	vector<Triangle> tr = *tc->GetTriangles();
+	
+	
 	if (!tr.empty()) {
 		for (int i = 0; i < tr.size(); i++) {
 			gr.DrawLine(&pen3, PointF(tr[i].GetP1().X(), tr[i].GetP1().Y()), PointF(tr[i].GetP2().X(), tr[i].GetP2().Y()));
@@ -149,8 +179,32 @@ void Controller::DrawMainGr(LPDRAWITEMSTRUCT Item1) {
 		}
 	}
 
+	//отрисовка треугольиков, которые есть в точке
+	Pen pen50(Color::Green, 0.006);
 	
+	vector<Triangle*> famTr = points[20].GetFamilyTriangles();
+	if (!famTr.empty()) {
+		for (int i = 0; i < famTr.size(); i++) {
+			gr.DrawLine(&pen50, PointF(famTr[i]->GetP1().X(), famTr[i]->GetP1().Y()), PointF(famTr[i]->GetP2().X(), famTr[i]->GetP2().Y()));
+			gr.DrawLine(&pen50, PointF(famTr[i]->GetP3().X(), famTr[i]->GetP3().Y()), PointF(famTr[i]->GetP1().X(), famTr[i]->GetP1().Y()));
+			gr.DrawLine(&pen50, PointF(famTr[i]->GetP2().X(), famTr[i]->GetP2().Y()), PointF(famTr[i]->GetP3().X(), famTr[i]->GetP3().Y()));
+		}
+	}
+
+	//отрисовка соседей
+	SolidBrush brushNeigh(Color::White);
+	SolidBrush brushN(Color::Black);
+	vector<tPoint*> neigh = points[20].GetNeightbours();
+	gr.FillEllipse(&brushN, RectF(PointF(points[0].X() - radius / 2, points[0].Y() - radius / 2), SizeF(radius, radius)));
 	
+	if (!neigh.empty()) {
+
+		for (int i = 0; i < neigh.size(); i++) {
+			gr.FillEllipse(&brushNeigh, RectF(PointF(neigh[i]->X() - radius / 2, neigh[i]->Y() - radius / 2), SizeF(radius, radius)));
+		}
+		
+	}
+
 	Graphics grnew(Item1->hDC);
 	grnew.DrawImage(&Image, 0, 0);
 }

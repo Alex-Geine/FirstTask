@@ -1,97 +1,12 @@
 #pragma once
-#include "time.h"
-#include "iostream"
-#include "vector"
-using namespace std;
+#include "DataTypes.h"
 
-//struct points
-struct tPoint {
-private:
-	double x = 0;
-	double y = 0;
-	bool isExtra = false;
 
-public:
-	//default constructor
-	tPoint() {};
-	
-	//constructor
-	tPoint(double x, double y, bool isExtra): x(x), y(y), isExtra(isExtra) {};
-	
-	//get x
-	double X() { return x; };
-	
-	//get y
-	double Y() { return y; };
-
-	//set X
-	void SetX(double x) { this->x = x; };
-	
-	//set Y
-	void SetY(double y) { this->y = y; };
-
-	//isExtra
-	bool isExtraP() { return isExtra; };
-};
-
-//структура эллипса
-struct Ellipce {
-private:
-	pair<double, double> c0;	//point of center
-	double a = 0;				//semiaxes
-	double b = 0;				//semiaxes
-
-	//for drawer
-	double x0 = 0;
-	double y0 = 0;
-	
-public:
-	//constructor
-	Ellipce(pair<double, double> c0, double a, double b) : c0(c0), a(a),b(b) {
-		x0 = c0.first - a;
-		y0 = c0.second - b;
-	};
-
-	//default constructor
-	Ellipce() :c0({0,0}) {};
-
-	//getters
-	double GetX0() { return x0; };
-	double GetY0() { return y0; };
-	double GetHeight() { return 2 * b; };
-	double GetWidth() { return 2 * a; };
-	tPoint* GetTPoints(int & size);
-};
-
-//структура треугольника
-struct Triangle {
-private:
-	tPoint p1, p2, p3;	//points of triangle
-	double Ro = 0;						//circumscribed circle radius
-	double Rv = 0;						//inscribed circle radius
-	double triangleParametr = 0;		//parametr for rating triangles
-	tPoint center;		//circumcenter
-
-	//Find parametrs
-	void FindParametrs();
-public:
-	//constructor
-	Triangle(tPoint p1, tPoint p2, tPoint p3);
-	
-	//check point
-	bool CheckPoint(tPoint p);
-	
-	//Getters
-	tPoint GetP1() { return p1; };
-	tPoint GetP2() { return p2; };
-	tPoint GetP3() { return p3; };
-	double GetParametr() { return triangleParametr; };
-};
 
 class TriangulationClass
 {
 private:
-	
+
 	int N = 0;								//points count
 	double									//parametrs of area
 		x0 = 0,
@@ -100,14 +15,17 @@ private:
 		width = 0,
 		areaBorder = 0.1;					//to cut off unnecessary triangles
 	vector<tPoint> points;		//mass poins
+	vector<tPoint> pointsUser;		//mass poins
 	vector<tPoint> tempPoints;//mass poins temp
 	double disp = 0;						//dispersion
 	double koefTriangle = 0.5;				//for rading triangles
 	int elCount = 2;					//count of ellipces
 	
-
 	//vector for Triangles
 	vector<Triangle> triangles;
+
+	//vector for Triangles to send
+	vector<Triangle> trianglesUser;
 
 	//mass of Ellipses
 	Ellipce* el;
@@ -115,11 +33,23 @@ private:
 	//generates Extra points
 	void GenExtraPoints();
 
+	//deletes extra points and tiangles
+	void DeleteExtraPoints();
+
 	//check triangle
 	bool CheckTriangle(int i, int j, int k);
 
+	//check triangle
+	bool CheckTriangle(int i, int j, int k, tPoint);
+
+	//search for duplicates
+	bool SearchForDupl(tPoint);
+
 	//check all Triangles
 	void CheckAllTriangles();
+
+	//check all Ellipces
+	bool CheckEllipces(tPoint p);
 
 	//cut off unnecessary triangle
 	bool CutOff(Triangle tr);
@@ -128,10 +58,25 @@ private:
 	bool IsBorder(Triangle tr);
 
 	//common function
-	void CommonFunc(int i, int j, vector<tPoint> points);
+	void CommonFunc(int i, int j);
+
+	//common function
+	void CommonFunc(int i, int j, tPoint);
 
 	//simple triangulation
-	void SimpleTriangulation(vector<tPoint> points);
+	void SimpleTriangulation();
+
+	//simple triangulation
+	void SimpleTriangulation(tPoint);
+
+	//update triangles and points
+	void UpdateTrianglesNPoints();
+
+	//searching for connections between points and triangles
+	void SearchConnections();
+
+	//search neigh
+	void SearchForNeight();
 public:
 
 	//constructor
@@ -141,6 +86,8 @@ public:
 
 		srand(time(0));
 		GenExtraPoints();
+		//send data to user
+		UpdateTrianglesNPoints();
 	};
 
 	//destructor
@@ -148,7 +95,7 @@ public:
 	};
 
 	//GetPoints func
-	vector<tPoint>* GetPoins() { return &points; };
+	vector<tPoint>* GetPoins() { return &pointsUser; };
 
 	//Getters
 
@@ -158,14 +105,24 @@ public:
 	double GetHeight() { return height; };
 	double GetWidth() { return width; };
 	int GetElCount() { return elCount; };
-	vector<Triangle>* GetTriangles(){ return &triangles; };
+	vector<Triangle>* GetTriangles(){ return &trianglesUser; };
 	Ellipce* GetEllipces() { return el; };
+
+	//clear old points
+	void ClearOldPoints() {		
+		for (int i = 0; i < points.size(); i++) {
+			if (!points[i].isExtraP() || !points[i].isBorderP()) {
+				points.erase(points.begin() + i);
+				i = -1;
+			}
+		}
+	};
 
 	//triangulation
 	void Triangulation();
 
 	//clear functions
-	void ClearTriangulation() { triangles.clear(); };
+	void ClearTriangulation() { triangles.clear(); ClearOldPoints(); };
 	void ClearPoints() { points.clear(); };
 };
 
