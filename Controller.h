@@ -9,13 +9,78 @@
 using namespace Gdiplus;
 
 #include "triangulationClass.h"
+#include "Model.h"
+
+struct ColorTable {
+public:
+	//массив кисточек
+	SolidBrush** brashes;
+
+	//массив кисточек дл€ треугольников
+	SolidBrush** triangleBrashes;
+
+	//размер сетки цветов
+	int Size = 11;
+
+	//массив с пороговыми значени€ми
+	double* mas;
+	
+	ColorTable(double max, double min) {
+		double step = abs(max - min) / (Size - 1);
+
+		mas = new double[Size];
+		brashes = new SolidBrush * [Size - 1];
+		triangleBrashes = new SolidBrush * [Size - 1];
+
+		for (int i = 0; i < Size; i++)
+			mas[i] = min + i * step;
+
+		for (int i = 0; i < Size - 1; i++) {
+			Color col(255 * i / (Size - 1), 0, 255 - 255 * i / (Size - 1));
+			brashes[i] = new SolidBrush(col);
+
+			Color col1(50, 255 * i / (Size - 1), 0, 255 - 255 * i / (Size - 1));
+			triangleBrashes[i] = new SolidBrush(col1);
+		}
+	}
+
+	//возвращает указатель на кисть из нужного диапазона
+	SolidBrush* GetBrush(double val) {
+		for (int i = 0; i < Size - 1; i++) {
+			if ((val >= mas[i]) && (val <= mas[i + 1]))
+				return brashes[i];
+		}
+		return new SolidBrush(Color::Black);
+	}
+
+	//возвращает указатель на кисть дл€ треугольника
+	SolidBrush* GetBrushForTriangle(double val) {
+		for (int i = 0; i < Size - 1; i++) {
+			if ((val >= mas[i]) && (val <= mas[i + 1]))
+				return triangleBrashes[i];
+		}
+		return new SolidBrush(Color::Black);
+	}
+
+	~ColorTable() {
+		if (mas)
+			delete[] mas;
+		if (brashes)
+			delete[] brashes;
+		if (triangleBrashes)
+			delete[] triangleBrashes;
+	}
+};
 
 class Controller {	
 private:	
 	ULONG_PTR token;
 	TriangulationClass* tc = nullptr;
+	Model* mod = nullptr;
+
 	HANDLE TriangleHandle = NULL;
-		
+	HANDLE ModelHandle = NULL;
+
 	//функци€, котора€ работает в потоке с триангул€цией
 	DWORD WINAPI TriangleFunk();
 
@@ -23,6 +88,17 @@ private:
 		Controller* This = (Controller*)param;
 		return This->TriangleFunk();
 	};
+
+
+	//функци€, котора€ работает в потоке с моделью
+	DWORD WINAPI ModelFunk();
+
+	static DWORD WINAPI StaticModelFunk(PVOID param) {
+		Controller* This = (Controller*)param;
+		return This->ModelFunk();
+	};
+
+
 	
 	//For Scaling
 
@@ -44,10 +120,25 @@ private:
 	//Some Flags
 	bool TriangulationReady = false;
 
+	bool SolvingReady = false;
+
 	//Model data
+	
+	double Potencial = 20;		//value of potincial on ellipces
+
 	Ellipce* el = nullptr;
 	vector<tPoint> points;
-	vector<Triangle> tr;	
+	vector<Triangle> tr;
+
+	//вектор с изолини€ми
+	vector<pair<tPoint,tPoint>> isolines[11];
+
+	//functions
+	void GetMinMax(double& min, double& max);
+
+	//make isolines
+	void MakeIsolines();
+
 public:	
 	//apdate model
 	void UpdateModel(double R, double disp, double x0, double y0, double height, double width, double N,
@@ -92,4 +183,9 @@ public:
 
 	//getters
 	bool IsTriangReady() { return TriangulationReady; };
+
+	bool IsSolvingReady() { return SolvingReady; };
+
+	//isolines
+	void Isolines() { MakeIsolines(); };
 };

@@ -90,6 +90,8 @@ BEGIN_MESSAGE_MAP(CtriangulationDlg, CDialogEx)
 	ON_BN_CLICKED(IDOK, &CtriangulationDlg::OnBnClickedOk)
 	ON_WM_MOUSEWHEEL()
 	ON_BN_CLICKED(IDOK2, &CtriangulationDlg::OnBnClickedOk2)
+	ON_BN_CLICKED(IDOK3, &CtriangulationDlg::OnBnClickedOk3)
+	ON_BN_CLICKED(IDOK4, &CtriangulationDlg::OnBnClickedOk4)
 END_MESSAGE_MAP()
 
 
@@ -193,7 +195,7 @@ void CtriangulationDlg::OnTimer(UINT_PTR nIDEvent)
 		DispatchMessage(&msg);
 	}
 
-	if (con.IsTriangReady())
+	if (con.IsTriangReady() || con.IsSolvingReady())
 		KillTimer(timer);
 
 	drawer.draw = 1;
@@ -247,4 +249,41 @@ void CtriangulationDlg::OnBnClickedOk2()
 {	
 	con.StartTriangulation();
 	timer = SetTimer(1, 10, 0);	
+	drawer.draw = 1;
+	con.GetData();
+	drawer.Invalidate(false);
+
+	while (PeekMessage(&msg, 0, WM_PAINT, WM_PAINT, PM_REMOVE))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+}
+
+//Посчитать
+void CtriangulationDlg::OnBnClickedOk3()
+{
+	con.StartSolve();
+
+	timer = SetTimer(1, 10, 0);
+}
+
+//Timer 2
+void OnTimer2(UINT_PTR nIDEvent) {
+	
+};
+
+
+//Изолинии
+void CtriangulationDlg::OnBnClickedOk4()
+{
+	con.Isolines();
+
+	drawer.Invalidate(false);
+	while (PeekMessage(&msg, 0, WM_PAINT, WM_PAINT, PM_REMOVE))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+	// TODO: добавьте свой код обработчика уведомлений
 }

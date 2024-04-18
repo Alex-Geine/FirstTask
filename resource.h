@@ -3,6 +3,8 @@
 // Используется triangulation.rc
 //
 #define IDOK2                           3
+#define IDOK3                           4
+#define IDOK4                           5
 #define IDM_ABOUTBOX                    0x0010
 #define IDD_ABOUTBOX                    100
 #define IDS_ABOUTBOX                    101

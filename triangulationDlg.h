@@ -38,8 +38,10 @@ public:
 	Controller con;
 	MSG msg;
 	UINT_PTR timer;
+	UINT_PTR timer2;
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnTimer2(UINT_PTR nIDEvent);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	unsigned int N;
 	double disp;
@@ -52,4 +54,6 @@ public:
 	double el2y;
 	double el2A;
 	double el2B;
+	afx_msg void OnBnClickedOk3();
+	afx_msg void OnBnClickedOk4();
 };
